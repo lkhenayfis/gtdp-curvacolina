@@ -57,6 +57,10 @@
 
 learqcolina <- function(arq, aba = 1, g, rho) {
 
+    if (!requireNamespace("readxl", quietly = TRUE)) {
+        stop("Pacote 'readxl (>= 1.3.1)' necessario para leitura de arquivos de colina")
+    }
+
     plan <- as.data.frame(readxl::read_xlsx(arq, aba, col_names = FALSE, .name_repair = "minimal"))
 
     if(nrow(plan) == 0) return(NULL)
@@ -87,6 +91,10 @@ learqcolina <- function(arq, aba = 1, g, rho) {
 #' @export
 
 learqprocit <- function(arq) {
+
+    if (!requireNamespace("readxl", quietly = TRUE)) {
+        stop("Pacote 'readxl (>= 1.3.1)' necessario para leitura de arquivos de processo iterativo")
+    }
 
     hl <- pot <- vaz <- rend <- NULL
 

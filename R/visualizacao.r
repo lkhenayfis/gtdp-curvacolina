@@ -38,9 +38,6 @@
 #' 
 #' @family curvacolina
 #' 
-#' @importFrom plotly plot_ly `%>%` layout hide_colorbar
-#' @importFrom ggplot2 ggplot aes geom_point scale_color_viridis_d labs theme_bw guides guide_legend
-#' 
 #' @export 
 
 plot.curvacolina <- function(x, tipo = c("3d", "2d"), print = TRUE, modo = "pot", ...) {
@@ -48,6 +45,7 @@ plot.curvacolina <- function(x, tipo = c("3d", "2d"), print = TRUE, modo = "pot"
     hl <- Y <- rend <- rend_label <- NULL
 
     tipo <- match.arg(tipo)
+    checa_deps_plot(tipo)
 
     dplot <- copy(x$CC)
     dplot[, rend_label := formatC(rend, format = "f", digits = 5, drop0trailing = TRUE)]
@@ -57,14 +55,14 @@ plot.curvacolina <- function(x, tipo = c("3d", "2d"), print = TRUE, modo = "pot"
         dplot[, Y := dplot[[modo]]]
         leg <- ifelse(modo == "pot", "Pot\U00EAncia (MW)", "Vaz\u00e3o Turbinada (m\u00b3/s)")
 
-        p <- plot_ly(dplot, x = ~hl, y = ~Y, z = ~rend, color = ~rend_label,
+        p <- plotly::plot_ly(dplot, x = ~hl, y = ~Y, z = ~rend, color = ~rend_label,
             colors = viridisLite::viridis(attr(x, "ncurvas")),
-            type = "scatter3d", mode = "markers") %>%
-            layout(scene = list(
-                xaxis = list(title = list(text = "Queda L\U00EDquida (m)")),
-                yaxis = list(title = list(text = leg)),
-                zaxis = list(title = list(text = "Rendimento (%)")))
-            )
+            type = "scatter3d", mode = "markers")
+        p <- plotly::layout(p, scene = list(
+            xaxis = list(title = list(text = "Queda L\U00EDquida (m)")),
+            yaxis = list(title = list(text = leg)),
+            zaxis = list(title = list(text = "Rendimento (%)")))
+        )
 
         if(print) print(p)
 
@@ -74,11 +72,12 @@ plot.curvacolina <- function(x, tipo = c("3d", "2d"), print = TRUE, modo = "pot"
         dplot[, Y := dplot[[modo]]]
         leg <- ifelse(modo == "pot", "Pot\U00EAncia (MW)", "Vaz\u00e3o Turbinada (m\u00b3/s)")
 
-        p <- ggplot(dplot, aes(hl, Y, color = rend_label)) + geom_point() +
-            scale_color_viridis_d(name = "Rendimento (%)") +
-            labs(x = "Queda L\U00EDquida (m)", y = leg) +
-            theme_bw() +
-            guides(color = guide_legend(ncol = 1))
+        p <- ggplot2::ggplot(dplot, ggplot2::aes(hl, Y, color = rend_label)) +
+            ggplot2::geom_point() +
+            ggplot2::scale_color_viridis_d(name = "Rendimento (%)") +
+            ggplot2::labs(x = "Queda L\U00EDquida (m)", y = leg) +
+            ggplot2::theme_bw() +
+            ggplot2::guides(color = ggplot2::guide_legend(ncol = 1))
 
         if(print) print(p)
 
@@ -110,11 +109,6 @@ plot.curvacolina <- function(x, tipo = c("3d", "2d"), print = TRUE, modo = "pot"
 #' 
 #' @family interpolador
 #' 
-#' @import data.table
-#' @importFrom plotly plot_ly `%>%` add_markers add_surface layout hide_colorbar hide_legend
-#' @importFrom ggplot2 ggplot aes geom_point scale_color_viridis_d labs theme_bw guides guide_legend
-#'     geom_raster scale_fill_viridis_c
-#' 
 #' @export 
 
 plot.interpolador <- function(x, tipo = c("3d", "2d"), add_colina = TRUE, print = TRUE, ...) {
@@ -122,6 +116,7 @@ plot.interpolador <- function(x, tipo = c("3d", "2d"), add_colina = TRUE, print 
     hl <- pot <- rend <- NULL
 
     tipo <- match.arg(tipo)
+    checa_deps_plot(tipo)
     modo <- attr(x, "modo")
 
     coord_args  <- list(...)
@@ -156,9 +151,6 @@ plot.interpolador <- function(x, tipo = c("3d", "2d"), add_colina = TRUE, print 
 #' @family gradecolina
 #' 
 #' @import data.table
-#' @importFrom plotly plot_ly `%>%` add_markers add_surface layout hide_colorbar hide_legend
-#' @importFrom ggplot2 ggplot aes geom_point scale_color_viridis_d labs theme_bw guides guide_legend
-#'     geom_raster scale_fill_viridis_c
 #' 
 #' @export 
 
@@ -167,6 +159,7 @@ plot.gradecolina <- function(x, tipo = c("3d", "2d"), add_colina = TRUE, print =
     hl <- Y <- rend <- NULL
 
     tipo <- match.arg(tipo)
+    checa_deps_plot(tipo)
     modo <- attr(x, "modo")
 
     if(add_colina) {
@@ -181,17 +174,16 @@ plot.gradecolina <- function(x, tipo = c("3d", "2d"), add_colina = TRUE, print =
     leg <- ifelse(modo == "pot", "Pot\U00EAncia (MW)", "Vaz\u00e3o Turbinada (m\u00b3/s)")
 
     if(tipo == "3d") {
-        p <- plot_ly() %>%
-            add_markers(x = colina$hl, y = colina$Y, z = colina$rend,
-                type = "scatter3d", name = "colina") %>%
-            add_surface(x = unique(grade$hl), y = unique(grade$Y),
-                z = t(data.matrix(dcast(grade, hl ~ Y, value.var = "rend"))[, -1]),
-                name = "interpolacao") %>%
-            layout(scene = list(
-                xaxis = list(title = list(text = "Queda L\U00EDquida (m)")),
-                yaxis = list(title = list(text = leg)),
-                zaxis = list(title = list(text = "Rendimento (%)")))
-            )
+        p <- plotly::plot_ly()
+        p <- plotly::add_markers(p, x = colina$hl, y = colina$Y, z = colina$rend,
+            type = "scatter3d", name = "colina")
+        p <- plotly::add_surface(p, x = unique(grade$hl), y = unique(grade$Y),
+            z = t(data.matrix(dcast(grade, hl ~ Y, value.var = "rend"))[, -1]),
+            name = "interpolacao")
+        p <- plotly::layout(p, scene = list(
+            xaxis = list(title = list(text = "Queda L\U00EDquida (m)")),
+            yaxis = list(title = list(text = leg)),
+            zaxis = list(title = list(text = "Rendimento (%)"))))
 
         if(print) print(p)
 
@@ -199,16 +191,39 @@ plot.gradecolina <- function(x, tipo = c("3d", "2d"), add_colina = TRUE, print =
     } else {
         colina[, rend := factor(paste0(formatC(rend, format = "f", digits = 3), "%"))]
         grade <- grade[complete.cases(grade)]
-        p <- ggplot() +
-            geom_raster(data = grade, aes(hl, Y, fill = rend)) +
-            geom_point(data = colina, aes(hl, Y), color = "blue") +
-            scale_fill_viridis_c(name = "Rendimento (%)", na.value = NA) +
-            labs(x = "Queda L\U00EDquida (m)", y = leg) +
-            theme_bw() +
-            guides(color = guide_legend(ncol = 1))
+        p <- ggplot2::ggplot() +
+            ggplot2::geom_raster(data = grade, ggplot2::aes(hl, Y, fill = rend)) +
+            ggplot2::geom_point(data = colina, ggplot2::aes(hl, Y), color = "blue") +
+            ggplot2::scale_fill_viridis_c(name = "Rendimento (%)", na.value = NA) +
+            ggplot2::labs(x = "Queda L\U00EDquida (m)", y = leg) +
+            ggplot2::theme_bw() +
+            ggplot2::guides(color = ggplot2::guide_legend(ncol = 1))
 
         if(print) print(p)
 
         invisible(p)
+    }
+}
+
+# AUXILIARES ---------------------------------------------------------------------------------------
+
+#' Checa Dependencias De Visualizacao
+#' 
+#' Checa se pacotes necessarios existem para cada tipo de visualizacao, retornando erro
+#' 
+#' @param tipo um de \code{c("3d", "2d")} indicando o tipo de grafico desejado
+#' 
+#' @return Caso dependencias existam, retorna NULL; do contrario lanca erro
+
+checa_deps_plot <- function(tipo = c("3d", "2d")) {
+    has_ggplot <- requireNamespace("ggplot2", quietly = TRUE)
+    has_plotly <- requireNamespace("plotly", quietly = TRUE)
+
+    if ((tipo == "2d") && !has_ggplot) {
+        stop("Pacote 'ggplot2 (>= 3.3.3)' necessario para visualizacoes 2D")
+    }
+
+    if ((tipo == "3d") && !has_plotly) {
+        stop("Pacote 'plotly (>= 4.10.0)' necessario para visualizacoes 2D")
     }
 }
